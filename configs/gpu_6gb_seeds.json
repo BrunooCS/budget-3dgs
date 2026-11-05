@@ -1,0 +1,21 @@
+{
+  "scenes": {
+    "truck":     {"path": "tandt/truck",    "images_dir": "images",   "downsample": 2},
+    "train":     {"path": "tandt/train",    "images_dir": "images",   "downsample": 2},
+    "drjohnson": {"path": "db/drjohnson",   "images_dir": "images",   "downsample": 2},
+    "playroom":  {"path": "db/playroom",    "images_dir": "images",   "downsample": 2},
+    "bicycle":   {"path": "360_v2/bicycle", "images_dir": "images_8", "downsample": 1},
+    "garden":    {"path": "360_v2/garden",  "images_dir": "images_8", "downsample": 1},
+    "stump":     {"path": "360_v2/stump",   "images_dir": "images_8", "downsample": 1},
+    "room":      {"path": "360_v2/room",    "images_dir": "images_4", "downsample": 1},
+    "counter":   {"path": "360_v2/counter", "images_dir": "images_4", "downsample": 1},
+    "kitchen":   {"path": "360_v2/kitchen", "images_dir": "images_4", "downsample": 1},
+    "bonsai":    {"path": "360_v2/bonsai",  "images_dir": "images_4", "downsample": 1}
+  },
+  "methods": ["mcmc", "rvr"],
+  "ablations": [],
+  "budgets": [100000],
+  "ablation_budgets": [],
+  "seeds": [1],
+  "train": {}
+}

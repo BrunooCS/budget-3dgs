@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "budget3dgs"
+version = "0.2.0"
+description = "Efficient 3D Gaussian splatting under a fixed memory budget"
+keywords = ["3d-gaussian-splatting", "3dgs", "gaussian-splatting", "novel-view-synthesis", "neural-rendering", "pytorch"]
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Bruno Corcuera Sánchez"}]
+dependencies = ["torch>=2.4", "gsplat==1.5.3", "numpy<2", "scipy>=1.11", "Pillow>=10", "plyfile>=1.0", "lpips==0.1.4", "matplotlib>=3.8", "imageio[ffmpeg]>=2.34"]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[project.scripts]
+budget3dgs = "budget3dgs.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Budget-3DGS Viewer</title>
+<style>
+  :root { --bg: #0d0f13; --card: rgba(18, 20, 26, 0.86); --line: rgba(255, 255, 255, 0.10); --ink: #eef1f6;
+          --muted: #8d96a6; --blue: #3d6bff; --blue-soft: rgba(61, 107, 255, 0.16); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden;
+               font: 13px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .stage { position: fixed; inset: 0; }
+  .panel { position: fixed; top: 16px; left: 16px; width: min(300px, calc(100vw - 32px)); padding: 16px;
+           background: var(--card); border: 1px solid var(--line); border-radius: 12px; backdrop-filter: blur(10px); z-index: 10; }
+  h1 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: 0.2px; }
+  .sub { margin: 2px 0 14px; color: var(--muted); }
+  .label { margin: 12px 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); }
+  .row { display: flex; gap: 6px; }
+  button { flex: 1; padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; background: transparent;
+           color: var(--ink); font: inherit; cursor: pointer; }
+  #scenes button { text-transform: capitalize; }
+  button:hover { border-color: rgba(255, 255, 255, 0.25); }
+  button.on { border-color: var(--blue); background: var(--blue-soft); }
+  button .psnr { display: block; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  button.on .psnr { color: #b9c9ff; }
+  button:disabled { opacity: 0.5; cursor: wait; }
+  .stats { margin-top: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .stats a { color: var(--ink); }
+  .hint { position: fixed; left: 16px; bottom: 14px; max-width: calc(100vw - 32px); padding: 6px 10px; border-radius: 8px;
+          background: var(--card); color: var(--muted); font-size: 12px; z-index: 10; pointer-events: none; }
+  kbd { padding: 0 5px; border: 1px solid var(--line); border-radius: 4px; font: 11px ui-monospace, monospace; }
+  .drop { position: fixed; inset: 0; display: none; place-items: center; z-index: 20; font-size: 18px;
+          background: rgba(13, 15, 19, 0.75); border: 2px dashed var(--blue); }
+  body.dragging .drop { display: grid; }
+</style>
+<script type="importmap">
+  { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "@mkkellogg/gaussian-splats-3d": "https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.7/build/gaussian-splats-3d.module.js" } }
+</script>
+</head>
+<body>
+<div class="panel">
+  <h1>Budget-3DGS viewer</h1>
+  <p class="sub">Same scene, same number of Gaussians, two ways of placing them.</p>
+  <div class="label">Scene</div>
+  <div class="row" id="scenes"></div>
+  <div class="label">Model</div>
+  <div class="row" id="models"></div>
+  <div class="stats" id="stats"></div>
+</div>
+<div class="hint">Drag to orbit · right-drag to pan · scroll to zoom · <kbd>M</kbd> switch model · drop a <b>.ply</b> anywhere to view your own</div>
+<div class="drop">Drop a 3DGS .ply file</div>
+
+<script type="module">
+import * as GS from '@mkkellogg/gaussian-splats-3d';
+
+const scenes = await (await fetch('scenes.json')).json();
+const $ = (id) => document.getElementById(id);
+let viewer = null, scene = null, model = 1, busy = false;
+
+// ── Viewer lifecycle ─────────────────────────────────
+// A new viewer per scene resets the camera; switching models keeps the current camera.
+async function openScene(s) {
+  if (viewer) await viewer.dispose();
+  const root = document.createElement('div');
+  root.className = 'stage';
+  document.body.prepend(root);
+  viewer = new GS.Viewer({ rootElement: root, cameraUp: s.up, initialCameraPosition: s.position, initialCameraLookAt: s.target,
+                           sphericalHarmonicsDegree: 2, sharedMemoryForWorkers: false });
+  viewer.start();
+  scene = s;
+}
+
+async function loadSplats(url, format) {
+  busy = true; render();
+  if (viewer.getSceneCount() > 0) await viewer.removeSplatScene(0, false);
+  await viewer.addSplatScene(url, { format, progressiveLoad: false, splatAlphaRemovalThreshold: 5 });
+  busy = false; render();
+}
+
+async function select(s, m) {
+  if (busy) return;
+  model = m;
+  if (s !== scene) await openScene(s);
+  await loadSplats(s.models[m].file, GS.SceneFormat.Ply);
+  history.replaceState(null, '', '#' + s.name);
+}
+
+// ── Panel ────────────────────────────────────────────
+function render() {
+  $('scenes').replaceChildren(...scenes.map((s) => button(s.name, '', s === scene, () => select(s, model))));
+  $('models').replaceChildren(...(scene ? scene.models : []).map((m, i) =>
+    button(m.label, `${m.psnr.toFixed(2)} dB`, scene && i === model, () => select(scene, i))));
+  const m = scene && scene.models[model];
+  $('stats').innerHTML = m ? `${(m.gaussians / 1000).toFixed(0)}K Gaussians · ${m.mb} MB · held-out PSNR<br>` +
+                             `<a href="${m.file}" download>Download this .ply</a>` : '';
+}
+
+function button(text, detail, on, onclick) {
+  const b = document.createElement('button');
+  b.className = on ? 'on' : '';
+  b.disabled = busy;
+  b.innerHTML = detail ? `${text}<span class="psnr">${detail}</span>` : text;
+  b.onclick = onclick;
+  return b;
+}
+
+// ── Input ────────────────────────────────────────────
+addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 'm' && scene) select(scene, model === 1 ? 0 : 1); });
+addEventListener('dragover', (e) => { e.preventDefault(); document.body.classList.add('dragging'); });
+addEventListener('dragleave', (e) => { if (!e.relatedTarget) document.body.classList.remove('dragging'); });
+addEventListener('drop', async (e) => {
+  e.preventDefault();
+  document.body.classList.remove('dragging');
+  const file = e.dataTransfer.files[0];
+  model = -1;
+  await loadSplats(URL.createObjectURL(file), GS.SceneFormat.Ply);
+  $('stats').textContent = `Local file: ${file.name}`;
+});
+
+const initial = scenes.find((s) => '#' + s.name === location.hash) || scenes[0];
+select(initial, 1);
+</script>
+</body>
+</html>

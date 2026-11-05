@@ -1,0 +1,21 @@
+{
+  "scenes": {
+    "truck":     {"path": "tandt/truck",    "images_dir": "images",   "downsample": 1},
+    "train":     {"path": "tandt/train",    "images_dir": "images",   "downsample": 1},
+    "drjohnson": {"path": "db/drjohnson",   "images_dir": "images",   "downsample": 1},
+    "playroom":  {"path": "db/playroom",    "images_dir": "images",   "downsample": 1},
+    "bicycle":   {"path": "360_v2/bicycle", "images_dir": "images_4", "downsample": 1},
+    "garden":    {"path": "360_v2/garden",  "images_dir": "images_4", "downsample": 1},
+    "stump":     {"path": "360_v2/stump",   "images_dir": "images_4", "downsample": 1},
+    "room":      {"path": "360_v2/room",    "images_dir": "images_2", "downsample": 1},
+    "counter":   {"path": "360_v2/counter", "images_dir": "images_2", "downsample": 1},
+    "kitchen":   {"path": "360_v2/kitchen", "images_dir": "images_2", "downsample": 1},
+    "bonsai":    {"path": "360_v2/bonsai",  "images_dir": "images_2", "downsample": 1}
+  },
+  "methods": ["mcmc", "rvr"],
+  "ablations": ["abl-opacity", "abl-error", "abl-recycle"],
+  "budgets": [100000, 250000, 500000, 1000000],
+  "ablation_budgets": [250000],
+  "seeds": [0, 1, 2],
+  "train": {}
+}
